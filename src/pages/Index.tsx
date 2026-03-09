@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Search, BookOpen } from "lucide-react";
+import { Search, BookOpen, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomerCard } from "@/components/CustomerCard";
 import { AddCustomerDialog } from "@/components/AddCustomerDialog";
 import { GlobalVoiceEntry } from "@/components/GlobalVoiceEntry";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { data: customers, isLoading } = useCustomers();
