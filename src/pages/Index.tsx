@@ -44,6 +44,9 @@ const Index = () => {
           <AddCustomerDialog />
         </div>
 
+        {/* Global Voice Entry */}
+        <GlobalVoiceEntry />
+
         {/* Customer List */}
         {isLoading ? (
           <div className="space-y-3">
