@@ -10,73 +10,10 @@ import { toast } from "sonner";
 
 const UNITS = ["kg", "g", "litre", "ml", "piece", "packet"];
 
-// Parse spoken text to extract quantity, unit, and item name
-// e.g. "2 kg rice" → { quantity: "2", unit: "kg", itemName: "rice" }
-// e.g. "5 piece bread" → { quantity: "5", unit: "piece", itemName: "bread" }
-function parseSpokenItem(text: string): { itemName: string; quantity?: string; unit?: string } {
-  const normalized = text.trim().toLowerCase();
-  
-  // Hindi number words mapping
-  const hindiNumbers: Record<string, number> = {
-    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5,
-    "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
-    "ग्यारह": 11, "बारह": 12, "पंद्रह": 15, "बीस": 20,
-    "पच्चीस": 25, "तीस": 30, "पचास": 50, "सौ": 100,
-  };
-
-  // Unit aliases (Hindi + English)
-  const unitAliases: Record<string, string> = {
-    "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg",
-    "ग्राम": "g", "gram": "g", "grams": "g", "g": "g",
-    "लीटर": "litre", "litre": "litre", "liter": "litre", "l": "litre",
-    "मिलीलीटर": "ml", "ml": "ml",
-    "पीस": "piece", "piece": "piece", "pieces": "piece", "नग": "piece",
-    "पैकेट": "packet", "packet": "packet", "packets": "packet",
-  };
-
-  const words = normalized.split(/\s+/);
-  let quantity: string | undefined;
-  let unit: string | undefined;
-  const remainingWords: string[] = [];
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    
-    // Check if it's a number
-    const num = parseFloat(word);
-    if (!isNaN(num) && !quantity) {
-      quantity = String(num);
-      continue;
-    }
-    
-    // Check Hindi number words
-    if (hindiNumbers[word] && !quantity) {
-      quantity = String(hindiNumbers[word]);
-      continue;
-    }
-
-    // Check unit aliases
-    if (unitAliases[word] && !unit) {
-      unit = unitAliases[word];
-      continue;
-    }
-
-    remainingWords.push(word);
-  }
-
-  return {
-    itemName: remainingWords.join(" ") || text.trim(),
-    quantity,
-    unit,
-  };
-}
-
-function parsePriceFromSpeech(text: string): string {
-  // Strip currency symbols and common words
-  let normalized = text.trim()
-    .replace(/[₹$]/g, "")
-    .replace(/rupees?|रुपये|रुपया|rs\.?|rupaiye/gi, "")
-    .trim();
+// Parse spoken text to extract quantity, unit, item name, and price
+// e.g. "2 kg rice 50 rupees" → { quantity: "2", unit: "kg", itemName: "rice", price: "50" }
+function parseSpokenEntry(text: string): { itemName: string; quantity?: string; unit?: string; price?: string } {
+  let normalized = text.trim().toLowerCase();
 
   // Convert Devanagari digits to Arabic
   normalized = normalized.replace(/[०-९]/g, (d) =>
@@ -86,28 +23,93 @@ function parsePriceFromSpeech(text: string): string {
   const hindiNumbers: Record<string, number> = {
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5,
     "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
-    "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15,
-    "सोलह": 16, "सत्रह": 17, "अठारह": 18, "उन्नीस": 19,
-    "बीस": 20, "पच्चीस": 25, "तीस": 30, "पैंतीस": 35,
-    "चालीस": 40, "पैंतालीस": 45, "पचास": 50, "पचपन": 55,
-    "साठ": 60, "पैंसठ": 65, "सत्तर": 70, "पचहत्तर": 75,
-    "अस्सी": 80, "पचासी": 85, "नब्बे": 90, "पंचानवे": 95,
+    "ग्यारह": 11, "बारह": 12, "पंद्रह": 15, "बीस": 20,
+    "पच्चीस": 25, "तीस": 30, "चालीस": 40, "पचास": 50,
+    "साठ": 60, "सत्तर": 70, "अस्सी": 80, "नब्बे": 90,
     "सौ": 100, "डेढ़ सौ": 150, "दो सौ": 200, "ढाई सौ": 250,
-    "तीन सौ": 300, "चार सौ": 400, "पांच सौ": 500,
-    "हजार": 1000, "डेढ़ हजार": 1500, "दो हजार": 2000,
+    "तीन सौ": 300, "पांच सौ": 500, "हजार": 1000,
   };
 
-  // Try to find a number in the text
-  const numMatch = normalized.match(/[\d]+\.?[\d]*/);
-  if (numMatch) return numMatch[0];
+  const unitAliases: Record<string, string> = {
+    "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg",
+    "ग्राम": "g", "gram": "g", "grams": "g", "g": "g",
+    "लीटर": "litre", "litre": "litre", "liter": "litre", "l": "litre",
+    "मिलीलीटर": "ml", "ml": "ml",
+    "पीस": "piece", "piece": "piece", "pieces": "piece", "नग": "piece",
+    "पैकेट": "packet", "packet": "packet", "packets": "packet",
+  };
 
-  // Try multi-word Hindi numbers first (longer matches first)
-  const sortedEntries = Object.entries(hindiNumbers).sort((a, b) => b[0].length - a[0].length);
-  for (const [word, num] of sortedEntries) {
-    if (normalized.includes(word)) return String(num);
+  const priceMarkers = ["rupees", "rupee", "rs", "रुपये", "रुपया", "rupaiye", "₹"];
+
+  // Extract price: look for number followed/preceded by price marker
+  let price: string | undefined;
+  
+  // Pattern: "50 rupees" or "rupees 50" or "₹50"
+  for (const marker of priceMarkers) {
+    // number before marker: "50 rupees"
+    const beforeRegex = new RegExp(`(\\d+\\.?\\d*)\\s*${marker}`, "i");
+    const beforeMatch = normalized.match(beforeRegex);
+    if (beforeMatch) {
+      price = beforeMatch[1];
+      normalized = normalized.replace(beforeMatch[0], " ").trim();
+      break;
+    }
+    // marker before number: "rupees 50"  
+    const afterRegex = new RegExp(`${marker}\\s*(\\d+\\.?\\d*)`, "i");
+    const afterMatch = normalized.match(afterRegex);
+    if (afterMatch) {
+      price = afterMatch[1];
+      normalized = normalized.replace(afterMatch[0], " ").trim();
+      break;
+    }
   }
 
-  return "";
+  // Try Hindi number words for price if marker found without digit
+  if (!price) {
+    for (const marker of priceMarkers) {
+      if (normalized.includes(marker)) {
+        const sortedEntries = Object.entries(hindiNumbers).sort((a, b) => b[0].length - a[0].length);
+        for (const [word, num] of sortedEntries) {
+          if (normalized.includes(word)) {
+            price = String(num);
+            normalized = normalized.replace(marker, " ").replace(word, " ").trim();
+            break;
+          }
+        }
+        if (price) break;
+      }
+    }
+  }
+
+  // Now parse remaining for quantity, unit, item name
+  const words = normalized.split(/\s+/).filter(w => w.length > 0);
+  let quantity: string | undefined;
+  let unit: string | undefined;
+  const remainingWords: string[] = [];
+
+  for (const word of words) {
+    const num = parseFloat(word);
+    if (!isNaN(num) && !quantity) {
+      quantity = String(num);
+      continue;
+    }
+    if (hindiNumbers[word] && !quantity) {
+      quantity = String(hindiNumbers[word]);
+      continue;
+    }
+    if (unitAliases[word] && !unit) {
+      unit = unitAliases[word];
+      continue;
+    }
+    remainingWords.push(word);
+  }
+
+  return {
+    itemName: remainingWords.join(" ") || text.trim(),
+    quantity,
+    unit,
+    price,
+  };
 }
 
 export function AddEntryForm({ customerId }: { customerId: string }) {
