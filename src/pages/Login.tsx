@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 const Login = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
