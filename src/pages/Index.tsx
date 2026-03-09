@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomerCard } from "@/components/CustomerCard";
 import { AddCustomerDialog } from "@/components/AddCustomerDialog";
+import { GlobalVoiceEntry } from "@/components/GlobalVoiceEntry";
 
 const Index = () => {
   const { data: customers, isLoading } = useCustomers();
