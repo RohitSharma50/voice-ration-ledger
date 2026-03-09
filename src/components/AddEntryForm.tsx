@@ -125,7 +125,13 @@ export function AddEntryForm({ customerId }: { customerId: string }) {
   }, []);
 
   const onPriceVoiceResult = useCallback((text: string) => {
-    setPrice(parsePriceFromSpeech(text));
+    const parsed = parsePriceFromSpeech(text);
+    if (parsed) {
+      setPrice(parsed);
+      toast.success(`Price set: ₹${parsed}`);
+    } else {
+      toast.error("Could not detect price. Try saying a number like '50 rupees'");
+    }
   }, []);
 
   const itemVoice = useVoiceInput({ onResult: onItemVoiceResult });
