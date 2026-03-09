@@ -119,25 +119,16 @@ export function AddEntryForm({ customerId }: { customerId: string }) {
   const [price, setPrice] = useState("");
   const addEntry = useAddRationEntry();
 
-  const onItemVoiceResult = useCallback((text: string) => {
-    const parsed = parseSpokenItem(text);
+  const onVoiceResult = useCallback((text: string) => {
+    const parsed = parseSpokenEntry(text);
     setItemName(parsed.itemName);
     if (parsed.quantity) setQuantity(parsed.quantity);
     if (parsed.unit) setUnit(parsed.unit);
+    if (parsed.price) setPrice(parsed.price);
+    toast.success(`Detected: ${parsed.itemName}${parsed.quantity ? ` ${parsed.quantity}` : ""}${parsed.unit ? ` ${parsed.unit}` : ""}${parsed.price ? ` ₹${parsed.price}` : ""}`);
   }, []);
 
-  const onPriceVoiceResult = useCallback((text: string) => {
-    const parsed = parsePriceFromSpeech(text);
-    if (parsed) {
-      setPrice(parsed);
-      toast.success(`Price set: ₹${parsed}`);
-    } else {
-      toast.error("Could not detect price. Try saying a number like '50 rupees'");
-    }
-  }, []);
-
-  const itemVoice = useVoiceInput({ onResult: onItemVoiceResult });
-  const priceVoice = useVoiceInput({ onResult: onPriceVoiceResult });
+  const voice = useVoiceInput({ onResult: onVoiceResult });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,27 +152,28 @@ export function AddEntryForm({ customerId }: { customerId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg bg-secondary/50 p-4 space-y-3">
-      {/* Item Name + Voice */}
+      {/* Voice input for all fields */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className={`gap-2 flex-1 ${voice.isListening ? "voice-pulse border-primary" : ""}`}
+          onClick={voice.isListening ? voice.stopListening : voice.startListening}
+        >
+          {voice.isListening ? <MicOff className="h-4 w-4 text-primary" /> : <Mic className="h-4 w-4" />}
+          {voice.isListening ? "Listening... (e.g. 2 kg rice 50 rupees)" : "Speak item, qty & price"}
+        </Button>
+      </div>
+
+      {/* Item Name */}
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Item (speak: "2 kg rice")</Label>
-        <div className="flex gap-2">
-          <Input
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            placeholder="Rice, Dal, Sugar..."
-            className="flex-1"
-            required
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className={itemVoice.isListening ? "voice-pulse border-primary" : ""}
-            onClick={itemVoice.isListening ? itemVoice.stopListening : itemVoice.startListening}
-          >
-            {itemVoice.isListening ? <MicOff className="h-4 w-4 text-primary" /> : <Mic className="h-4 w-4" />}
-          </Button>
-        </div>
+        <Label className="text-xs text-muted-foreground">Item Name</Label>
+        <Input
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+          placeholder="Rice, Dal, Sugar..."
+          required
+        />
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
@@ -204,21 +196,10 @@ export function AddEntryForm({ customerId }: { customerId: string }) {
           </Select>
         </div>
 
-        {/* Price + Voice */}
+        {/* Price */}
         <div className="flex-1 min-w-[130px] space-y-1">
           <Label className="text-xs text-muted-foreground">Price (₹)</Label>
-          <div className="flex gap-2">
-            <Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" required />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className={priceVoice.isListening ? "voice-pulse border-primary" : ""}
-              onClick={priceVoice.isListening ? priceVoice.stopListening : priceVoice.startListening}
-            >
-              {priceVoice.isListening ? <MicOff className="h-4 w-4 text-primary" /> : <Mic className="h-4 w-4" />}
-            </Button>
-          </div>
+          <Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" required />
         </div>
 
         <Button type="submit" size="icon" disabled={addEntry.isPending}>
