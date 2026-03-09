@@ -60,6 +60,7 @@ const Login = () => {
 
       login(cleaned);
       toast.success("Login successful!");
+      navigate("/", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Invalid OTP");
     } finally {
