@@ -39,7 +39,7 @@ function parseSpokenEntry(text: string): { itemName: string; quantity?: string; 
     "पैकेट": "packet", "packet": "packet", "packets": "packet",
   };
 
-  const priceMarkers = ["rupees", "rupee", "rs", "रुपये", "रुपया", "rupaiye", "₹"];
+  const priceMarkers = ["rupees", "rupee", "rs", "रुपये", "रुपया", "रुपए", "रूपए", "रूपये", "rupaiye", "rupaye", "₹"];
 
   // Extract price: look for number followed/preceded by price marker
   let price: string | undefined;
