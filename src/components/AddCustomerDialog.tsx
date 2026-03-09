@@ -31,8 +31,12 @@ export function AddCustomerDialog() {
       setName("");
       setPhone("");
       setOpen(false);
-    } catch {
-      toast.error("Failed to add customer");
+    } catch (err: any) {
+      if (err?.message?.includes("customers_name_unique") || err?.code === "23505") {
+        toast.error("Customer with this name already exists!");
+      } else {
+        toast.error("Failed to add customer");
+      }
     }
   };
 

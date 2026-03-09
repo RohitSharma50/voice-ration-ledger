@@ -1,0 +1,1 @@
+ALTER TABLE public.customers ADD CONSTRAINT customers_name_unique UNIQUE (name);
