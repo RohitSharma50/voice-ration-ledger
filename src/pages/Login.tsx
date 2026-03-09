@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Phone, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 
 const Login = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -58,6 +60,7 @@ const Login = () => {
 
       login(cleaned);
       toast.success("Login successful!");
+      navigate("/", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Invalid OTP");
     } finally {
