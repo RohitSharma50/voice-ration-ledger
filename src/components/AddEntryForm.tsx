@@ -72,27 +72,42 @@ function parseSpokenItem(text: string): { itemName: string; quantity?: string; u
 }
 
 function parsePriceFromSpeech(text: string): string {
-  const normalized = text.trim().toLowerCase();
-  
+  // Strip currency symbols and common words
+  let normalized = text.trim()
+    .replace(/[₹$]/g, "")
+    .replace(/rupees?|रुपये|रुपया|rs\.?|rupaiye/gi, "")
+    .trim();
+
+  // Convert Devanagari digits to Arabic
+  normalized = normalized.replace(/[०-९]/g, (d) =>
+    String("०१२३४५६७८९".indexOf(d))
+  );
+
   const hindiNumbers: Record<string, number> = {
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5,
     "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
-    "ग्यारह": 11, "बारह": 12, "पंद्रह": 15, "बीस": 20,
-    "पच्चीस": 25, "तीस": 30, "चालीस": 40, "पचास": 50,
-    "साठ": 60, "सत्तर": 70, "अस्सी": 80, "नब्बे": 90, "सौ": 100,
-    "दो सौ": 200, "तीन सौ": 300, "पांच सौ": 500, "हजार": 1000,
+    "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15,
+    "सोलह": 16, "सत्रह": 17, "अठारह": 18, "उन्नीस": 19,
+    "बीस": 20, "पच्चीस": 25, "तीस": 30, "पैंतीस": 35,
+    "चालीस": 40, "पैंतालीस": 45, "पचास": 50, "पचपन": 55,
+    "साठ": 60, "पैंसठ": 65, "सत्तर": 70, "पचहत्तर": 75,
+    "अस्सी": 80, "पचासी": 85, "नब्बे": 90, "पंचानवे": 95,
+    "सौ": 100, "डेढ़ सौ": 150, "दो सौ": 200, "ढाई सौ": 250,
+    "तीन सौ": 300, "चार सौ": 400, "पांच सौ": 500,
+    "हजार": 1000, "डेढ़ हजार": 1500, "दो हजार": 2000,
   };
 
-  // Try to find a number first
-  const numMatch = normalized.match(/[\d.]+/);
+  // Try to find a number in the text
+  const numMatch = normalized.match(/[\d]+\.?[\d]*/);
   if (numMatch) return numMatch[0];
 
-  // Try Hindi number words
-  for (const [word, num] of Object.entries(hindiNumbers)) {
+  // Try multi-word Hindi numbers first (longer matches first)
+  const sortedEntries = Object.entries(hindiNumbers).sort((a, b) => b[0].length - a[0].length);
+  for (const [word, num] of sortedEntries) {
     if (normalized.includes(word)) return String(num);
   }
 
-  return text.trim();
+  return "";
 }
 
 export function AddEntryForm({ customerId }: { customerId: string }) {
