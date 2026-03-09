@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { Search, BookOpen } from "lucide-react";
+import { Search, BookOpen, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomerCard } from "@/components/CustomerCard";
 import { AddCustomerDialog } from "@/components/AddCustomerDialog";
 import { GlobalVoiceEntry } from "@/components/GlobalVoiceEntry";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { data: customers, isLoading } = useCustomers();
+  const { logout, phone } = useAuth();
   const [search, setSearch] = useState("");
 
   const filtered = customers?.filter((c) =>
@@ -19,12 +22,17 @@ const Index = () => {
       {/* Header */}
       <div className="khata-header px-4 py-8 text-primary-foreground">
         <div className="mx-auto max-w-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <BookOpen className="h-8 w-8" />
-            <h1 className="text-3xl font-bold font-display">Digital Khata</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-8 w-8" />
+              <h1 className="text-3xl font-bold font-display">Digital Khata</h1>
+            </div>
+            <Button variant="ghost" size="icon" onClick={logout} className="text-primary-foreground hover:bg-primary-foreground/20">
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
           <p className="text-primary-foreground/80 font-body text-sm">
-            Your digital ration ledger — track customers & entries
+            Logged in as {phone}
           </p>
         </div>
       </div>
