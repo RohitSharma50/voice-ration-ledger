@@ -70,30 +70,43 @@ function extractPrice(normalized: string): { price?: string; remaining: string }
 }
 
 // Find best matching customer name from the beginning of the text
-function findCustomerInText(text: string, customerNames: string[]): { customerId: string; customerName: string; remaining: string } | null {
+function findCustomerInText(text: string, customerNames: string[]): { customerName: string; remaining: string } | null {
   const lower = text.toLowerCase();
   // Sort by name length desc to match longer names first
   const sorted = [...customerNames].sort((a, b) => b.length - a.length);
   for (const name of sorted) {
     const nameLower = name.toLowerCase();
     if (lower.startsWith(nameLower)) {
-      return {
-        customerId: "",
-        customerName: name,
-        remaining: text.slice(name.length).trim(),
-      };
+      return { customerName: name, remaining: text.slice(name.length).trim() };
     }
-    // Also check if name appears anywhere at word boundaries
     const idx = lower.indexOf(nameLower);
     if (idx !== -1) {
-      return {
-        customerId: "",
-        customerName: name,
-        remaining: (text.slice(0, idx) + " " + text.slice(idx + name.length)).trim(),
-      };
+      return { customerName: name, remaining: (text.slice(0, idx) + " " + text.slice(idx + name.length)).trim() };
     }
   }
   return null;
+}
+
+// Extract a new customer name from the start of text (first 1-3 words that aren't numbers/units/price markers)
+function extractNewCustomerName(text: string): { customerName: string; remaining: string } | null {
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const nameWords: string[] = [];
+
+  for (const word of words) {
+    // Stop if we hit a number, unit, price marker, or Hindi number
+    if (!isNaN(parseFloat(word))) break;
+    if (unitAliases[word]) break;
+    if (hindiNumbers[word]) break;
+    if (priceMarkers.includes(word)) break;
+    nameWords.push(word);
+    if (nameWords.length >= 3) break; // Max 3 words for a name
+  }
+
+  if (nameWords.length === 0) return null;
+
+  const customerName = nameWords.join(" ");
+  const remaining = text.slice(customerName.length).trim();
+  return { customerName, remaining };
 }
 
 function parseGlobalEntry(text: string, customerNames: string[]): {
@@ -109,12 +122,18 @@ function parseGlobalEntry(text: string, customerNames: string[]): {
   const { price, remaining: afterPrice } = extractPrice(normalized);
   normalized = afterPrice;
 
-  // 2. Find customer name
+  // 2. Find customer name (existing first, then treat as new)
   const customerMatch = findCustomerInText(normalized, customerNames);
   let customerName: string | undefined;
   if (customerMatch) {
     customerName = customerMatch.customerName;
     normalized = customerMatch.remaining;
+  } else {
+    const newCustomer = extractNewCustomerName(normalized);
+    if (newCustomer) {
+      customerName = newCustomer.customerName;
+      normalized = newCustomer.remaining;
+    }
   }
 
   // 3. Parse quantity, unit, item from remaining
