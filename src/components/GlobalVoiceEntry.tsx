@@ -169,6 +169,9 @@ export function GlobalVoiceEntry() {
     if (!customers) return;
     setIsProcessing(true);
 
+    // Show what was heard for debugging
+    toast.info(`Heard: "${text}"`);
+
     try {
       const customerNames = customers.map(c => c.name);
       const parsed = parseGlobalEntry(text, customerNames);
@@ -178,7 +181,7 @@ export function GlobalVoiceEntry() {
         return;
       }
       if (!parsed.itemName) {
-        toast.error("Item name not detected.");
+        toast.error(`Detected customer "${parsed.customerName}" but no item name found.`);
         return;
       }
 
