@@ -10,12 +10,12 @@ import { toast } from "sonner";
 const UNITS = ["kg", "g", "litre", "ml", "piece", "packet"];
 
 const unitAliases: Record<string, string> = {
-  "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg",
+  "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg", "kilos": "kg", "kilogram": "kg", "kilograms": "kg",
   "ग्राम": "g", "gram": "g", "grams": "g", "g": "g",
-  "लीटर": "litre", "litre": "litre", "liter": "litre", "l": "litre",
-  "मिलीलीटर": "ml", "ml": "ml",
-  "पीस": "piece", "piece": "piece", "pieces": "piece", "नग": "piece",
-  "पैकेट": "packet", "packet": "packet", "packets": "packet",
+  "लीटर": "litre", "litre": "litre", "liter": "litre", "litres": "litre", "liters": "litre", "l": "litre",
+  "मिलीलीटर": "ml", "ml": "ml", "millilitre": "ml", "milliliter": "ml",
+  "पीस": "piece", "piece": "piece", "pieces": "piece", "pcs": "piece", "नग": "piece", "pc": "piece",
+  "पैकेट": "packet", "packet": "packet", "packets": "packet", "pack": "packet", "packs": "packet",
 };
 
 const hindiNumbers: Record<string, number> = {

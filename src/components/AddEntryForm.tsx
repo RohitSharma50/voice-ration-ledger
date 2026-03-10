@@ -31,12 +31,18 @@ function parseSpokenEntry(text: string): { itemName: string; quantity?: string; 
   };
 
   const unitAliases: Record<string, string> = {
-    "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg",
+    // kg
+    "किलो": "kg", "किलोग्राम": "kg", "kg": "kg", "kilo": "kg", "kilos": "kg", "kilogram": "kg", "kilograms": "kg",
+    // g
     "ग्राम": "g", "gram": "g", "grams": "g", "g": "g",
-    "लीटर": "litre", "litre": "litre", "liter": "litre", "l": "litre",
-    "मिलीलीटर": "ml", "ml": "ml",
-    "पीस": "piece", "piece": "piece", "pieces": "piece", "नग": "piece",
-    "पैकेट": "packet", "packet": "packet", "packets": "packet",
+    // litre
+    "लीटर": "litre", "litre": "litre", "liter": "litre", "litres": "litre", "liters": "litre", "l": "litre",
+    // ml
+    "मिलीलीटर": "ml", "ml": "ml", "millilitre": "ml", "milliliter": "ml",
+    // piece
+    "पीस": "piece", "piece": "piece", "pieces": "piece", "pcs": "piece", "नग": "piece", "pc": "piece",
+    // packet
+    "पैकेट": "packet", "packet": "packet", "packets": "packet", "pack": "packet", "packs": "packet",
   };
 
   const priceMarkers = ["rupees", "rupee", "rs", "रुपये", "रुपया", "रुपए", "रूपए", "रूपये", "rupaiye", "rupaye", "₹"];
