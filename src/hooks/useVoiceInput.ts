@@ -13,7 +13,7 @@ interface UseVoiceInputOptions {
   lang?: string;
 }
 
-export function useVoiceInput({ onResult, lang = "hi-IN" }: UseVoiceInputOptions = {}) {
+export function useVoiceInput({ onResult, lang = "en-IN" }: UseVoiceInputOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

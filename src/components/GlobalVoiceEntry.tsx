@@ -141,13 +141,21 @@ function parseGlobalEntry(text: string, customerNames: string[]): {
   let quantity: string | undefined;
   let unit: string | undefined;
   const itemWords: string[] = [];
+  const numberWords: string[] = []; // collect all numbers
 
   for (const word of words) {
     const num = parseFloat(word);
-    if (!isNaN(num) && !quantity) { quantity = String(num); continue; }
-    if (hindiNumbers[word] && !quantity) { quantity = String(hindiNumbers[word]); continue; }
+    if (!isNaN(num)) { numberWords.push(String(num)); continue; }
+    if (hindiNumbers[word]) { numberWords.push(String(hindiNumbers[word])); continue; }
     if (unitAliases[word] && !unit) { unit = unitAliases[word]; continue; }
     itemWords.push(word);
+  }
+
+  // First number = quantity, last number (if different) = price
+  if (numberWords.length >= 1) quantity = numberWords[0];
+  let finalPrice = price;
+  if (!finalPrice && numberWords.length >= 2) {
+    finalPrice = numberWords[numberWords.length - 1];
   }
 
   return {
@@ -155,7 +163,7 @@ function parseGlobalEntry(text: string, customerNames: string[]): {
     itemName: itemWords.join(" ") || undefined,
     quantity,
     unit,
-    price,
+    price: finalPrice,
   };
 }
 
