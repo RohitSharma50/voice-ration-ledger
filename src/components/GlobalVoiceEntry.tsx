@@ -122,12 +122,18 @@ function parseGlobalEntry(text: string, customerNames: string[]): {
   const { price, remaining: afterPrice } = extractPrice(normalized);
   normalized = afterPrice;
 
-  // 2. Find customer name
+  // 2. Find customer name (existing first, then treat as new)
   const customerMatch = findCustomerInText(normalized, customerNames);
   let customerName: string | undefined;
   if (customerMatch) {
     customerName = customerMatch.customerName;
     normalized = customerMatch.remaining;
+  } else {
+    const newCustomer = extractNewCustomerName(normalized);
+    if (newCustomer) {
+      customerName = newCustomer.customerName;
+      normalized = newCustomer.remaining;
+    }
   }
 
   // 3. Parse quantity, unit, item from remaining
