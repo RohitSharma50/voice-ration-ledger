@@ -119,14 +119,44 @@ export function AddEntryForm({ customerId }: { customerId: string }) {
   const [price, setPrice] = useState("");
   const addEntry = useAddRationEntry();
 
+  const submitEntry = useCallback(async (item: string, qty: string, u: string, p: string) => {
+    if (!item.trim() || !qty || !p) return;
+    try {
+      await addEntry.mutateAsync({
+        customer_id: customerId,
+        item_name: item.trim(),
+        quantity: parseFloat(qty),
+        unit: u,
+        price: parseFloat(p),
+      });
+      toast.success(`Added: ${item} ${qty} ${u} ₹${p}`);
+      setItemName("");
+      setQuantity("");
+      setPrice("");
+    } catch {
+      toast.error("Failed to add entry");
+    }
+  }, [addEntry, customerId]);
+
   const onVoiceResult = useCallback((text: string) => {
     const parsed = parseSpokenEntry(text);
-    setItemName(parsed.itemName);
-    if (parsed.quantity) setQuantity(parsed.quantity);
-    if (parsed.unit) setUnit(parsed.unit);
-    if (parsed.price) setPrice(parsed.price);
-    toast.success(`Detected: ${parsed.itemName}${parsed.quantity ? ` ${parsed.quantity}` : ""}${parsed.unit ? ` ${parsed.unit}` : ""}${parsed.price ? ` ₹${parsed.price}` : ""}`);
-  }, []);
+    const pItem = parsed.itemName;
+    const pQty = parsed.quantity || "1";
+    const pUnit = parsed.unit || "kg";
+    const pPrice = parsed.price || "";
+
+    // If we have item and price, auto-submit
+    if (pItem && pPrice) {
+      submitEntry(pItem, pQty, pUnit, pPrice);
+    } else {
+      // Fill form for manual completion
+      setItemName(pItem);
+      setQuantity(pQty);
+      if (parsed.unit) setUnit(parsed.unit);
+      if (parsed.price) setPrice(parsed.price);
+      toast.info(`Fill missing fields and tap +`);
+    }
+  }, [submitEntry]);
 
   const voice = useVoiceInput({ onResult: onVoiceResult });
 
