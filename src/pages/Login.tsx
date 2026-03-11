@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Phone, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,12 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [step, setStep] = useState<"details" | "otp">("details");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSendOtp = async () => {
+    const cleanedPhone = phone.replace(/\D/g, "");
+    if (cleanedPhone.length !== 10) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
+    }
     if (!email || !email.includes("@")) {
       toast.error("Enter a valid email address");
       return;
@@ -25,6 +31,7 @@ const Login = () => {
         email,
         options: {
           shouldCreateUser: true,
+          data: { phone: `+91${cleanedPhone}` },
         },
       });
 
@@ -56,7 +63,6 @@ const Login = () => {
       if (error) throw error;
 
       toast.success("Login successful!");
-      // Auth state change will handle redirect
     } catch (err: any) {
       toast.error(err.message || "Invalid OTP");
     } finally {
@@ -66,7 +72,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <div className="khata-header px-4 py-8 text-primary-foreground">
         <div className="mx-auto max-w-lg">
           <div className="flex items-center gap-3 mb-2">
@@ -74,7 +79,7 @@ const Login = () => {
             <h1 className="text-3xl font-bold font-display">Digital Khata</h1>
           </div>
           <p className="text-primary-foreground/80 font-body text-sm">
-            Login with your email address
+            Login with your mobile number
           </p>
         </div>
       </div>
@@ -83,29 +88,44 @@ const Login = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="h-7 w-7 text-primary" />
+              <Phone className="h-7 w-7 text-primary" />
             </div>
             <CardTitle className="font-display text-xl">
-              {step === "email" ? "Enter your email" : "Verify OTP"}
+              {step === "details" ? "Enter your details" : "Verify OTP"}
             </CardTitle>
             <CardDescription className="font-body">
-              {step === "email"
-                ? "We'll send a 6-digit OTP to verify your email"
+              {step === "details"
+                ? "We'll send a free OTP to your email for verification"
                 : `OTP sent to ${email}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {step === "email" ? (
+            {step === "details" ? (
               <>
-                <Input
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <div className="space-y-3">
+                  <div className="flex gap-2 items-center">
+                    <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-2 rounded-md border border-input">
+                      +91
+                    </span>
+                    <Input
+                      type="tel"
+                      placeholder="Enter 10-digit mobile number"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      className="flex-1"
+                      maxLength={10}
+                    />
+                  </div>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email (for OTP)"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
                 <Button
                   onClick={handleSendOtp}
-                  disabled={loading || !email.includes("@")}
+                  disabled={loading || phone.length !== 10 || !email.includes("@")}
                   className="w-full gap-2"
                 >
                   {loading ? (
@@ -146,11 +166,11 @@ const Login = () => {
                   variant="ghost"
                   className="w-full text-sm"
                   onClick={() => {
-                    setStep("email");
+                    setStep("details");
                     setOtp("");
                   }}
                 >
-                  Change email
+                  Change details
                 </Button>
               </>
             )}
