@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { data: customers, isLoading } = useCustomers();
-  const { logout, phone } = useAuth();
+  const { logout, user } = useAuth();
   const [search, setSearch] = useState("");
 
   const filtered = customers?.filter((c) =>
@@ -32,7 +32,7 @@ const Index = () => {
             </Button>
           </div>
           <p className="text-primary-foreground/80 font-body text-sm">
-            Logged in as {phone}
+            Logged in as {user?.email}
           </p>
         </div>
       </div>

@@ -1,38 +1,58 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
-  phone: string | null;
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (phone: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  phone: null,
+  user: null,
+  session: null,
   isAuthenticated: false,
-  login: () => {},
-  logout: () => {},
+  isLoading: true,
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [phone, setPhone] = useState<string | null>(() =>
-    localStorage.getItem("auth_phone")
-  );
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = !!phone;
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    );
 
-  const login = (ph: string) => {
-    localStorage.setItem("auth_phone", ph);
-    setPhone(ph);
-  };
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
 
-  const logout = () => {
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    // Clear old localStorage auth if present
     localStorage.removeItem("auth_phone");
-    setPhone(null);
   };
+
+  const isAuthenticated = !!session;
 
   return (
-    <AuthContext.Provider value={{ phone, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, session, isAuthenticated, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,39 +1,36 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { BookOpen, Phone, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSendOtp = async () => {
-    const cleaned = phone.startsWith("+") ? phone : `+91${phone}`;
-    if (cleaned.length < 12) {
-      toast.error("Enter a valid phone number");
+    if (!email || !email.includes("@")) {
+      toast.error("Enter a valid email address");
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { phone: cleaned },
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+        },
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      toast.success("OTP sent to your phone!");
+      toast.success("OTP sent to your email!");
       setStep("otp");
     } catch (err: any) {
       toast.error(err.message || "Failed to send OTP");
@@ -48,19 +45,18 @@ const Login = () => {
       return;
     }
 
-    const cleaned = phone.startsWith("+") ? phone : `+91${phone}`;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("verify-otp", {
-        body: { phone: cleaned, code: otp },
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: "email",
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      login(cleaned);
       toast.success("Login successful!");
-      navigate("/", { replace: true });
+      // Auth state change will handle redirect
     } catch (err: any) {
       toast.error(err.message || "Invalid OTP");
     } finally {
@@ -78,7 +74,7 @@ const Login = () => {
             <h1 className="text-3xl font-bold font-display">Digital Khata</h1>
           </div>
           <p className="text-primary-foreground/80 font-body text-sm">
-            Login with your mobile number
+            Login with your email address
           </p>
         </div>
       </div>
@@ -87,36 +83,29 @@ const Login = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <Phone className="h-7 w-7 text-primary" />
+              <Mail className="h-7 w-7 text-primary" />
             </div>
             <CardTitle className="font-display text-xl">
-              {step === "phone" ? "Enter your mobile number" : "Verify OTP"}
+              {step === "email" ? "Enter your email" : "Verify OTP"}
             </CardTitle>
             <CardDescription className="font-body">
-              {step === "phone"
-                ? "We'll send a 6-digit OTP to verify your number"
-                : `OTP sent to +91${phone.replace(/^\+91/, "")}`}
+              {step === "email"
+                ? "We'll send a 6-digit OTP to verify your email"
+                : `OTP sent to ${email}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {step === "phone" ? (
+            {step === "email" ? (
               <>
-                <div className="flex gap-2 items-center">
-                  <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-2 rounded-md border border-input">
-                    +91
-                  </span>
-                  <Input
-                    type="tel"
-                    placeholder="Enter 10-digit number"
-                    value={phone.replace(/^\+91/, "")}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    className="flex-1"
-                    maxLength={10}
-                  />
-                </div>
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
                 <Button
                   onClick={handleSendOtp}
-                  disabled={loading || phone.replace(/^\+91/, "").length !== 10}
+                  disabled={loading || !email.includes("@")}
                   className="w-full gap-2"
                 >
                   {loading ? (
@@ -157,11 +146,11 @@ const Login = () => {
                   variant="ghost"
                   className="w-full text-sm"
                   onClick={() => {
-                    setStep("phone");
+                    setStep("email");
                     setOtp("");
                   }}
                 >
-                  Change number
+                  Change email
                 </Button>
               </>
             )}
