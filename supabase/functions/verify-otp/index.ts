@@ -50,8 +50,58 @@ Deno.serve(async (req) => {
     // Clean up used OTPs for this phone
     await supabase.from("otp_codes").delete().eq("phone", phone);
 
+    // Create or find Supabase auth user using phone-derived email
+    const cleanDigits = phone.replace(/\D/g, "");
+    const autoEmail = `${cleanDigits}@digitalkhata.user`;
+
+    // Try to create user; if already exists, that's fine
+    const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+      email: autoEmail,
+      email_confirm: true,
+      phone: phone,
+      phone_confirm: true,
+      user_metadata: { phone },
+    });
+
+    let userEmail = autoEmail;
+
+    if (createError) {
+      // User likely already exists - look them up
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const existingUser = listData?.users?.find(
+        (u) => u.email === autoEmail || u.phone === phone
+      );
+      if (existingUser) {
+        userEmail = existingUser.email || autoEmail;
+      } else {
+        console.error("Failed to create or find user:", createError);
+        return new Response(
+          JSON.stringify({ error: "Failed to create user account" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Generate a magic link token (without sending email) to create a session
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: "magiclink",
+      email: userEmail,
+    });
+
+    if (linkError || !linkData) {
+      console.error("Failed to generate link:", linkError);
+      return new Response(
+        JSON.stringify({ error: "Failed to create session" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ success: true, phone }),
+      JSON.stringify({
+        success: true,
+        token_hash: linkData.properties.hashed_token,
+        email: userEmail,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
