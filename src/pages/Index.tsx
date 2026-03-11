@@ -32,7 +32,7 @@ const Index = () => {
             </Button>
           </div>
           <p className="text-primary-foreground/80 font-body text-sm">
-            Logged in as {user?.email}
+            Logged in as {user?.user_metadata?.phone || user?.email}
           </p>
         </div>
       </div>
