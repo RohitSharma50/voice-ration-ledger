@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { data: customers, isLoading } = useCustomers();
-  const { logout, phone } = useAuth();
+  const { logout, user } = useAuth();
   const [search, setSearch] = useState("");
 
   const filtered = customers?.filter((c) =>
